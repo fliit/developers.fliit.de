@@ -388,10 +388,12 @@ definitions:
           latitude:
             type: "number"
             format: "double"
+            default: null
             description: "Recipient latitude"
           longitude:
             type: "number"
             format: "double"
+            default: null
             description: "Recipient longitude"
         required:
           - phone
