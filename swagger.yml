@@ -417,7 +417,6 @@ definitions:
     allOf:
       - $ref: "#/definitions/ShipmentPost"
       - $ref: "#/definitions/Entity"
-      - $ref: "#/definitions/EntitySource"
 
   ShipmentPost:
     type: "object"
