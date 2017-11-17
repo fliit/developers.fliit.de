@@ -1,0 +1,542 @@
+swagger: "2.0"
+info:
+  description: |
+    Fliit API allows customers to request and manage delivery tasks or pick ups from their systems.
+
+    # How to use it?
+
+    The list below shows the endpoints available with a description. By exploring them you can also check the documentation for every field that is part of a request and which ones are required or not.
+
+    # Authentication
+
+    Authentication should be done using HTTP Basic Auth, the username should be the api key sent to you by Fliit team and password should be empty.
+
+    # Other important details
+
+    - All dates should follow the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard.
+    - Phone numbers should have always the country code and follow the [E.164](https://en.wikipedia.org/wiki/E.164) standard
+  version: "v1"
+  title: "Fliit API"
+  x-logo:
+    url: assets/fliit_logo.png
+  contact:
+    email: "support@fliit.de"
+host: "api.fliit.de"
+basePath: "/v1"
+tags:
+- name: "Task"
+  description: "Tasks are the unit of work of the delivery lifecycle process."
+- name: "Shipment"
+  description: "Shipments are the thing being delivered and belongs to a Task."
+- name: "State events"
+  description: "Events related to Tasks transition of states."
+schemes:
+- "https"
+
+
+securityDefinitions:
+  basicAuth:
+    type: basic
+security:
+  - basicAuth: []
+
+
+paths:
+  /task:
+    post:
+      tags:
+      - "Task"
+      summary: "Create a Task"
+      description: "Creates a Task to deliver or pick up a shipments to recipients."
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Task object with at least the required fields. The Shipment objects are optional."
+        required: true
+        schema:
+          $ref: "#/definitions/TaskPost"
+      responses:
+        201:
+          description: "Created"
+          schema:
+            $ref: "#/definitions/Task"
+        422:
+          description: "There's a problem with one or more fields."
+
+  /tasks:
+    get:
+      tags:
+      - "Task"
+      summary: "Search Tasks"
+      description: "Search for Tasks filtered by the selected parameters."
+      produces:
+      - "application/json"
+      parameters:
+        - in: query
+          name: delivery_at
+          type: string
+          required: true
+          description: "The date of delivery in ISO 8601 format (ex.: 2017-02-13)"
+        - in: query
+          name: state
+          type: string
+          enum: [created, processing, confirmed, picked_up, ongoing, delivered, cancelled, failed]
+          description: "Name of current Task state."
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "array"
+            items:
+              type: "object"
+              $ref: "#/definitions/Task"
+
+  /task/{key}:
+    get:
+      tags:
+      - "Task"
+      summary: "Get Task"
+      description: "Get a Task by its unique key"
+      produces:
+      - "application/json"
+      parameters:
+      - name: key
+        in: path
+        description: Task unique key
+        type: string
+        required: true
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Task"
+        404:
+          description: "Not found"
+
+  /task/{key}/shipment:
+    post:
+      tags:
+      - "Shipment"
+      summary: "Create a Shipment"
+      description: "A Shipment is always part of a Task, hence the need to assign Task key as parameter on the request path."
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: key
+        in: path
+        description: Task unique key
+        type: string
+        required: true
+      - in: "body"
+        name: "body"
+        description: "The shipment object."
+        required: true
+        schema:
+          $ref: "#/definitions/ShipmentPost"
+      responses:
+        201:
+          description: "Created"
+          schema:
+            $ref: "#/definitions/Shipment"
+        422:
+          description: "There's a problem with one or more fields."
+
+  /shipment/{key}:
+    get:
+      tags:
+      - "Shipment"
+      summary: "Get Shipment"
+      description: "Get a Shipment by its unique key"
+      produces:
+      - "application/json"
+      parameters:
+      - name: key
+        in: path
+        description: Shipment unique key
+        type: string
+        required: true
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Shipment"
+        404:
+          description: "Not found"
+    put:
+      tags:
+      - "Shipment"
+      summary: "Update a Shipment"
+      description: "Updated a Shipment by its key. Only add the fields you want to change to the object on the body request."
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: key
+        in: path
+        description: Shipment unique key
+        type: string
+        required: true
+      - in: "body"
+        name: "body"
+        description: "The shipment object with the fields you want to change."
+        required: true
+        schema:
+          $ref: "#/definitions/ShipmentPost"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Shipment"
+        422:
+          description: "There's a problem with one or more fields."
+    delete:
+      tags:
+      - "Shipment"
+      summary: "Delete a Shipment"
+      description: "Delete a Shipment by its key. This means that this shipment will be also removed from the Task."
+      produces:
+      - "application/json"
+      parameters:
+      - name: key
+        in: path
+        description: Shipment unique key
+        type: string
+        required: true
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Shipment"
+        404:
+          description: "Not found"
+
+  /task/{key}/state_event:
+    post:
+      tags:
+      - "State events"
+      summary: "Cancel a Task"
+      description: "The only state change available in the public API and that can be triggered by user is the cancel operation."
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: key
+        in: path
+        description: Task unique key
+        type: string
+        required: true
+      - in: "body"
+        name: "body"
+        description: "The state event object."
+        required: true
+        schema:
+          $ref: "#/definitions/StateEventPost"
+      responses:
+        201:
+          description: "Created"
+          schema:
+            $ref: "#/definitions/StateEvent"
+        422:
+          description: "There's a problem with one or more fields."
+
+  /health_check:
+    get:
+      summary: "Health check"
+      description: "Endpoint to check API status."
+      produces:
+      - "application/json"
+      security: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                default: OK
+                example: OK
+        500:
+          description: "Our servers have issues, contact support@fliit.de"
+
+definitions:
+  Task:
+    type: "object"
+    description: "A delivery or pickup task that will be executed via Fliit Platform."
+    allOf:
+      - $ref: "#/definitions/TaskPost"
+      - $ref: "#/definitions/Entity"
+      - $ref: "#/definitions/EntitySource"
+    properties:
+      requested_at:
+        type: "string"
+        format: "dateTime"
+        description: "When this task was requested."
+      retailer:
+        $ref: "#/definitions/Retailer"
+      state:
+        $ref: "#/definitions/TaskStates"
+      out_of_range:
+        type: "string"
+        description: "`true` if Task is outside allowed range of execution. Default is false and it can be true only if you configured an allowed range with Fliit (ask support)."
+      early_tolerance_minutes:
+        type: "integer"
+        format: "int64"
+        default: "null"
+        description: "Amount of minutes before start of time window to consider delivery completion to be on time. Null value means no tolerance."
+      late_tolerance_minutes:
+        type: "integer"
+        format: "int64"
+        default: "null"
+        description: "Amount of minutes after end of time window to consider delivery completion to be on time. Null value means no tolerance."
+
+  TaskPost:
+    type: "object"
+    description: "A delivery or pickup task that will be sent on HTTP Post requests. Used only for POST requests."
+    properties:
+      order_id:
+        type: "string"
+        description: "Your order number, alphanumeric value and something identifies uniquely your submission."
+        example: "ABC123"
+      delivery_at:
+        type: "string"
+        format: "dateTime"
+        description: "Date and time the delivery should happen (ISO 8601)"
+        example: "2017-02-13"
+      window_start_at:
+        type: "string"
+        format: "dateTime"
+        description: "Start of delivery time window (ISO 8601)."
+        example: "2017-02-13T14:00:00+02"
+      window_end_at:
+        type: "string"
+        format: "dateTime"
+        description: "End of delivery time window (ISO 8601), required in case `window_start_at` is provided."
+        example: "2017-02-13T15:00:00+02"
+      delivery_notes:
+        type: "string"
+        description: "Instructions for delivery or any other relevant information."
+      load_unit:
+        type: "string"
+        description: "Represents the volume being delivered (e.g. box, pallet, etc)."
+        example: "box"
+      load_value:
+        type: "number"
+        format: "double"
+        description: "Amount in integer or float of the load unit. Required if `load_unit` is set."
+        example: 3
+      dropoff:
+        type: "boolean"
+        description: "If false, the task is a pickup task."
+        default: true
+      sender_company:
+        type: "string"
+        description: "Identify the company sending this delivery."
+      sender_name:
+        type: "string"
+        description: "Identify the name of the person sending this delivery."
+      recipient:
+        type: "object"
+        description: ""
+        properties:
+          company_name:
+            type: "string"
+            description: "Company name that will receive the delivery."
+          first_name:
+            type: "string"
+            description: "First name of the recipient."
+            example: ""
+          last_name:
+            type: "string"
+            description: "Last name of the recipient."
+            example: ""
+          phone:
+            type: "string"
+            description: "Phone number of the recipient, should have always country code and follow E.164 (https://en.wikipedia.org/wiki/E.164) standard"
+            example: "+49 176 4175 2713"
+          email:
+            type: "string"
+            description: "Email of the recipient."
+          street:
+            type: "string"
+            description: "Address to be delivered."
+            example: ""
+          street_number:
+            type: "string"
+          street_complement:
+            type: "string"
+          zipcode:
+            type: "string"
+          city:
+            type: "string"
+          state:
+            type: "string"
+          country:
+            type: "string"
+          recipient_id:
+            type: "string"
+            description: "your recipient identification, alphanumeric value and something it identifies uniquely."
+            example: "ABC123"
+          latitude:
+            type: "number"
+            format: "double"
+            description: "Recipient latitude"
+          longitude:
+            type: "number"
+            format: "double"
+            description: "Recipient longitude"
+        required:
+          - phone
+          - street
+          - street_number
+          - zipcode
+          - city
+          - country
+      shipments:
+        type: "array"
+        description: "A list of Shipments that belongs to the Task."
+        items:
+          type: "object"
+          $ref: '#/definitions/Shipment'
+    required:
+      - delivery_at
+
+  Shipment:
+    type: "object"
+    description: "The box, pallet or whatever is being delivered or picked up. A Shipment belongs to a Task."
+    allOf:
+      - $ref: "#/definitions/ShipmentPost"
+      - $ref: "#/definitions/Entity"
+      - $ref: "#/definitions/EntitySource"
+
+  ShipmentPost:
+    type: "object"
+    description: "The box, pallet or whatever is being delivered or picked up. Used only for POST requests."
+    properties:
+      shipment_id:
+        type: "string"
+        description: "Your order number, alphanumeric value and something identifies uniquely your submission."
+        example: "ABC123"
+      notes:
+        type: "string"
+        description: "Information relevant to this Shipment."
+      unit:
+        type: "string"
+        description: "How this Shipment is represented (e.g. box, pallet, etc). It's an open field."
+        example: "pallet"
+      weight:
+        type: "number"
+        format: "double"
+        description: "Weight in kilos"
+        example: 45.5
+      height:
+        type: "number"
+        format: "double"
+        description: "Height in centimeters"
+        example: 100
+      width:
+        type: "number"
+        format: "double"
+        description: "Width in centimeters"
+        example: 50.8
+      depth:
+        type: "number"
+        format: "double"
+        description: "Depth in centimeters"
+        example: 42.24
+      scan_string:
+        type: "string"
+        description: "Scan code that ,ight be checked with a barcode scanner."
+        example: "ABC123"
+    required:
+      - shipment_id
+
+  StateEvent:
+    type: "object"
+    description: "Entity that represents a Task state transition."
+    allOf:
+      - $ref: "#/definitions/StateEventPost"
+      - $ref: "#/definitions/Entity"
+    properties:
+      source:
+        type: string
+        description: "The system that triggered this state transition."
+
+  StateEventPost:
+    type: "object"
+    description: "Entity that represents a Task state transition. Used only for POST requests."
+    properties:
+      name:
+        $ref: "#/definitions/TaskStates"
+      timestamp:
+        type: "string"
+        format: "dateTime"
+        description: "Time of event (ISO 8601)"
+        example: "2017-02-13T15:00:00.234+02"
+      reason:
+        type: "string"
+        description: "Reason why the Task is transitioning to that state on `name` field."
+        example: "Customer cancelled the order."
+      latitude:
+        type: "number"
+        format: "double"
+        description: "Current latitude"
+      longitude:
+        type: "number"
+        format: "double"
+        description: "Current longitude"
+    required:
+      - name
+
+  Retailer:
+    type: "object"
+    description: "Entity representing the Fliit customer."
+    properties:
+      name:
+        type: "string"
+        description: "Name of the retailer"
+      slug:
+        type: "string"
+        description: "Unique slug of the retailer"
+
+  Entity:
+    type: "object"
+    description: "Common fields of all Entities on the API"
+    properties:
+      key:
+        type: "string"
+        description: "Unique key, use it as reference for other endpoints."
+
+  EntitySource:
+    type: "object"
+    description: "Source fields of some Entities on the API"
+    properties:
+      source:
+        type: "string"
+        default: "API"
+        description: "The source of creation of this entity."
+      source_reference:
+        type: "string"
+        description: "A URL to fetch this entity on the source. Can be null."
+
+  TaskStates:
+    type: "string"
+    description: "Available states of Task lifecycle."
+    enum:
+      - created
+      - processing
+      - confirmed
+      - picked_up
+      - ongoing
+      - delivered
+      - cancelled
+      - failed
+    example: cancelled
