@@ -11,6 +11,40 @@ info:
 
     Authentication should be done using HTTP Basic Auth, the username should be the api key sent to you by Fliit team and password should be empty.
 
+    # Pagination
+
+
+    Endpoints that return lists are paginated. Paginated results return the following headers:
+
+
+    * X-Link-Next
+      * Link to the next page
+      * Eg: https://api.fliit.de/v1/tasks?page=3&per_page=100
+    * X-Link-Prev
+      * Link to the previous page
+      * Eg: https://api.fliit.de/v1/tasks?page=2&per_page=100
+    * X-Link-Last:
+      * Link to the last page
+      * Eg: https://api.fliit.de/v1/tasks?page=3&per_page=100
+    * X-Page-Count:
+      * Number of pages
+    * X-Page-Size:
+      * Number of results per page
+    * X-Page-Current:
+      * Number of current page
+
+
+    The following query string parameters are accepted:
+
+
+    * page
+      * Number of current page
+      * Default: 1
+    * per_page
+      * Number of results per page
+      * Default: 40
+      * Maximum: 100
+
     # Other important details
 
     - All dates should follow the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard.
@@ -79,13 +113,24 @@ paths:
         - in: query
           name: delivery_at
           type: string
-          required: true
+          default: "Today"
           description: "The date of delivery in ISO 8601 format (ex.: 2017-02-13)"
         - in: query
           name: state
           type: string
           enum: [created, processing, confirmed, picked_up, ongoing, delivered, cancelled, failed]
           description: "Name of current Task state."
+        - in: query
+          name: per_page
+          default: 40
+          maximum: 100
+          type: integer
+          description: "The maximum number of tasks returns in a sigle request."
+        - in: query
+          name: page
+          default: 1
+          type: integer
+          description: "The number of the page to retrieve"
       responses:
         200:
           description: "OK"
@@ -94,6 +139,25 @@ paths:
             items:
               type: "object"
               $ref: "#/definitions/Task"
+          headers:
+            X-Link-Next:
+              description: Link to the next page
+              type: string
+            X-Link-Prev:
+              description: Link to the previous page
+              type: string
+            X-Link-Last:
+              description: Link to the last page
+              type: string
+            X-Page-Size:
+              description: Total number of tasks in a page
+              type: integer
+            X-Page-Count:
+              description: Total number of pages
+              type: integer
+            X-Page-Current:
+              description: Current page number
+              type: integer
 
   /task/{key}:
     get:
