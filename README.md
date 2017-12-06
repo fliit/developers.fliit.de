@@ -37,6 +37,18 @@ Right now we are downloading the release file directly from Github and storing o
 
 [Follow ReDoc releases for updates](https://github.com/Rebilly/ReDoc/releases)
 
+# Deploy
+
+Make sure the `$FLIIT_DEV_WEBSITE_BUCKET` and `$FLIIT_DEV_SITE_CLOUDFRONT_DIST_ID` are set and run.
+
+    $ make deploy
+
+The values that should be assigned to these env vars are available on the terraform output of `devops` repository. You can get them by running:
+
+    devops/terraform/base$ terraform output fliit_dev_website_export_env_var
+
+And then execute the output as a command on your terminal.
+
 ## Other important links:
 
 * https://swagger.io/docs/specification/2-0/basic-structure/
