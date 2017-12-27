@@ -32,6 +32,8 @@ info:
       * Number of results per page
     * X-Page-Current:
       * Number of current page
+    * X-Items-Total:
+      * Total number of items
 
 
     The following query string parameters are accepted:
@@ -113,7 +115,6 @@ paths:
         - in: query
           name: delivery_at
           type: string
-          default: "Today"
           description: "The date of delivery in ISO 8601 format (ex.: 2017-02-13)"
         - in: query
           name: state
